@@ -29,7 +29,7 @@ public class DeviceController {
     }
 
     @PostMapping("/checkDevice")
-    public ResponseEntity<DeviceCheckResponse> checkDevice(@RequestParam String devid, @RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<DeviceCheckResponse> checkDevice(@RequestParam Integer devid, @RequestParam String username, @RequestParam String password) {
         DeviceCheckResponse response = new DeviceCheckResponse();
 
         Optional<ClientModel> client = clientService.checkClient(username, password);
@@ -64,7 +64,7 @@ public class DeviceController {
         return ResponseEntity.ok(response);
     }
     @PostMapping("/addUserToDevice")
-    public ResponseEntity<AddOrDelClientToDeviceResponse> addUserToDevice(@RequestParam String devid, @RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<AddOrDelClientToDeviceResponse> addUserToDevice(@RequestParam Integer devid, @RequestParam String username, @RequestParam String password) {
         AddOrDelClientToDeviceResponse response = new AddOrDelClientToDeviceResponse();
 
         // Kullanıcı doğrulaması
@@ -96,7 +96,7 @@ public class DeviceController {
     }
 
     @DeleteMapping("/removeUserFromDevice")
-    public ResponseEntity<AddOrDelClientToDeviceResponse> removeUserFromDevice(@RequestParam String devid, @RequestParam String username, @RequestParam String password) {
+    public ResponseEntity<AddOrDelClientToDeviceResponse> removeUserFromDevice(@RequestParam Integer devid, @RequestParam String username, @RequestParam String password) {
         AddOrDelClientToDeviceResponse response = new AddOrDelClientToDeviceResponse();
 
         // Kullanıcı doğrulaması
@@ -139,17 +139,17 @@ public class DeviceController {
         response.setLogin("OK");
 
         // Kullanıcıya bağlı tüm cihazları al
-        List<DeviceModel> devices = deviceService.getAllDevicesForClient(clientModel.getClientId());
+        List<DeviceModel> devices = deviceService.getAllDevicesForClient(clientModel.getID());
 
         // Yanıt verilerini doldur
         List<String> deviceIds = new ArrayList<>();
-        List<String> deviceSerials = new ArrayList<>();
+        List<Integer> deviceSerials = new ArrayList<>();
         List<String> devicePermissions = new ArrayList<>();
 
         for (DeviceModel device : devices) {
             deviceIds.add(device.getId().toString());
             deviceSerials.add(device.getDevId());
-            if (device.getClientId().equals(clientModel.getClientId())) {
+            if (device.getClientId().equals(clientModel.getID())) {
                 devicePermissions.add("ADMIN");
             } else {
                 devicePermissions.add("USER");

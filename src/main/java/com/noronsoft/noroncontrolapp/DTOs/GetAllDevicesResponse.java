@@ -10,6 +10,6 @@ import java.util.List;
 public class GetAllDevicesResponse {
     private String login;
     private List<String> deviceids;
-    private List<String> deviceserials;
+    private List<Integer> deviceserials;
     private List<String> devicepermissions;
 }

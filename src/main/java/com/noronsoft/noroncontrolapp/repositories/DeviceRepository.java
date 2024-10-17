@@ -8,6 +8,6 @@ import java.util.List;
 import java.util.Optional;
 @Repository
 public interface DeviceRepository  extends JpaRepository<DeviceModel , Integer> {
-    Optional<DeviceModel> findByDevId(String devId);
+    Optional<DeviceModel> findByDevId(Integer devId);
     List<DeviceModel> findByClientId(Integer clientId);
 }

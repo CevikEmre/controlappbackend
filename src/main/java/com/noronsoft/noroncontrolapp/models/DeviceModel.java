@@ -6,18 +6,19 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+@Entity
 @Table(name = "devices")
 @Getter
 @Setter
 public class DeviceModel {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    private String devId;
+    private Integer devId;
 
     @Column(columnDefinition = "TINYINT(1)")
     private Boolean enable;
@@ -28,7 +29,7 @@ public class DeviceModel {
 
     //Adminin eklediği user idler
     @Column(name = "otherClientIDs", columnDefinition = "TEXT")
-    private List<Integer> otherClientIds;
+    private List<Integer> otherClientIds = new ArrayList<>(); ;
 
     @Column(name = "createdDateTime", columnDefinition = "DATETIME")
     private LocalDateTime createdDateTime;

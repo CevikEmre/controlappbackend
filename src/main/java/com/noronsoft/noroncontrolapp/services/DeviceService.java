@@ -19,7 +19,7 @@ public class DeviceService {
         this.deviceRepository = deviceRepository;
     }
 
-    public Optional<DeviceModel> checkDevice(String devId) {
+    public Optional<DeviceModel> checkDevice(Integer devId) {
         return deviceRepository.findByDevId(devId);
     }
     public boolean hasAccessToDevice(DeviceModel device, Integer clientId) {
@@ -36,17 +36,17 @@ public class DeviceService {
         response.setDeleted("NONE");
 
         if (device.getClientId() == null) {
-            device.setClientId(client.getClientId());
+            device.setClientId(client.getID());
             deviceRepository.save(device);
             response.setClientpermission("ADMIN");
             response.setAdded("OK");
             response.setClientperexist("NONE");
-        } else if (device.getOtherClientIds().contains(client.getClientId())) {
+        } else if (device.getOtherClientIds().contains(client.getID())) {
             response.setClientpermission("USER");
             response.setAdded("NONE");
             response.setClientperexist("YES");
         } else {
-            device.getOtherClientIds().add(client.getClientId());
+            device.getOtherClientIds().add(client.getID());
             deviceRepository.save(device);
             response.setClientpermission("USER");
             response.setAdded("OK");
@@ -62,11 +62,11 @@ public class DeviceService {
         response.setDevice("OK");
         response.setAdded("NONE");
 
-        if (client.getClientId().equals(device.getClientId())) {
+        if (client.getID().equals(device.getClientId())) {
             response.setClientpermission("ADMIN");
             response.setDeleted("NOTPOSSIBLE");
-        } else if (device.getOtherClientIds().contains(client.getClientId())) {
-            device.getOtherClientIds().remove(client.getClientId());
+        } else if (device.getOtherClientIds().contains(client.getID())) {
+            device.getOtherClientIds().remove(client.getID());
             deviceRepository.save(device);
             response.setClientpermission("USER");
             response.setDeleted("YES");
@@ -80,7 +80,7 @@ public class DeviceService {
     public List<DeviceModel> getAllDevicesForClient(Integer clientId) {
         List<DeviceModel> adminDevices = deviceRepository.findByClientId(clientId);
         List<DeviceModel> userDevices = deviceRepository.findAll().stream()
-                .filter(device -> device.getOtherClientIds().contains(clientId))
+                .filter(device -> device.getOtherClientIds() != null && device.getOtherClientIds().contains(clientId))
                 .toList();
 
         adminDevices.addAll(userDevices);

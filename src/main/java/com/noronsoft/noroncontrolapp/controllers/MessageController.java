@@ -32,7 +32,7 @@ public class MessageController {
     }
 
     @PostMapping("/getMessage")
-    public ResponseEntity<GetMessageResponse> getMessage(@RequestParam String username, @RequestParam String password, @RequestParam String devid, @RequestParam Integer clientid) {
+    public ResponseEntity<GetMessageResponse> getMessage(@RequestParam String username, @RequestParam String password, @RequestParam Integer devid, @RequestParam Integer clientid) {
         GetMessageResponse response = new GetMessageResponse();
 
         Optional<ClientModel> client = clientService.checkClient(username, password);

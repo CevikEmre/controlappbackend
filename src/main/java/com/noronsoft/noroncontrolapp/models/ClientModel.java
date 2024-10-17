@@ -8,13 +8,14 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+@Entity
 @Table(name = "clients")
 @Getter
 @Setter
 public class ClientModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer clientId;
+    private Integer ID;
 
     @NotNull
     private String name;
