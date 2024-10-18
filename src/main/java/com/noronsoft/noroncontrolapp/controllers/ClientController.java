@@ -2,10 +2,11 @@ package com.noronsoft.noroncontrolapp.controllers;
 
 import com.noronsoft.noroncontrolapp.DTOs.SaveNewClientResponse;
 import com.noronsoft.noroncontrolapp.models.ClientModel;
-import com.noronsoft.noroncontrolapp.request.SaveNewClientRequest;
+import com.noronsoft.noroncontrolapp.requestParams.SaveNewClientRequest;
 import com.noronsoft.noroncontrolapp.services.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,10 +37,9 @@ public class ClientController {
     public ResponseEntity<SaveNewClientResponse> saveNewClient(@Valid @RequestBody SaveNewClientRequest saveNewClientRequest, BindingResult result) {
         SaveNewClientResponse response = new SaveNewClientResponse();
 
-        // Doğrulama hatalarını kontrol et
         if (result.hasErrors()) {
             String validationErrors = result.getAllErrors().stream()
-                    .map(error -> error.getDefaultMessage())
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
                     .collect(Collectors.joining(", "));
             response.setText("ERROR: " + validationErrors);
             return ResponseEntity.badRequest().body(response);

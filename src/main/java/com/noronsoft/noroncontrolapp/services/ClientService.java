@@ -2,7 +2,7 @@ package com.noronsoft.noroncontrolapp.services;
 
 import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.repositories.ClientRepository;
-import com.noronsoft.noroncontrolapp.request.SaveNewClientRequest;
+import com.noronsoft.noroncontrolapp.requestParams.SaveNewClientRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

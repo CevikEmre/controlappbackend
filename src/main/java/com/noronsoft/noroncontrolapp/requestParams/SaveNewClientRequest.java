@@ -1,4 +1,4 @@
-package com.noronsoft.noroncontrolapp.request;
+package com.noronsoft.noroncontrolapp.requestParams;
 
 import lombok.Getter;
 import lombok.Setter;
