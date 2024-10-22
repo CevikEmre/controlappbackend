@@ -34,17 +34,18 @@ public class JwtFilter extends HttpFilter {
                 return;
             }
 
-            String token = authorizationHeader.substring(7);
+            String token = authorizationHeader.substring(7); // Remove "Bearer " prefix
 
             try {
-                String username = jwtUtil.extractUsername(token, true);
-                if (!jwtUtil.validateToken(token, username)) {
+                Integer userId = jwtUtil.extractUserId(token, false);
+
+                if (!jwtUtil.validateToken(token, userId.toString(), false)) {
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());
                     response.getWriter().write("Invalid token");
                     return;
                 }
 
-                request.setAttribute("username", username);
+                request.setAttribute("userId", userId);
 
             } catch (Exception e) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());

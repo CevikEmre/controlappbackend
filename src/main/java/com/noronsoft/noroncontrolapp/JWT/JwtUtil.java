@@ -15,60 +15,81 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    // Separate secret keys for access and refresh tokens
     private final SecretKey ACCESS_SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final SecretKey REFRESH_SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-
-    public String extractUsername(String token, boolean isAccessToken) {
-        return extractClaim(token, Claims::getSubject, isAccessToken);
+    // Extract the username from the token
+    public String extractUsername(String token, boolean isRefreshToken) {
+        return extractClaim(token, Claims::getSubject, isRefreshToken);
     }
 
-    public Date extractExpiration(String token, boolean isAccessToken) {
-        return extractClaim(token, Claims::getExpiration, isAccessToken);
+    // Extract the userId from the token
+    public Integer extractUserId(String token, boolean isRefreshToken) {
+        return extractClaim(token, claims -> {
+            Object userId = claims.get("userId");
+            if (userId != null) {
+                return Integer.parseInt(userId.toString());
+            }
+            throw new IllegalArgumentException("userId claim is missing from the token");
+        }, isRefreshToken);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, boolean isAccessToken) {
-        final Claims claims = extractAllClaims(token, isAccessToken);
+    // Extract expiration date from the token
+    public Date extractExpiration(String token, boolean isRefreshToken) {
+        return extractClaim(token, Claims::getExpiration, isRefreshToken);
+    }
+
+    // General method to extract claims
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver, boolean isRefreshToken) {
+        final Claims claims = extractAllClaims(token, isRefreshToken);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token, boolean isAccessToken) {
-        SecretKey key = isAccessToken ? ACCESS_SECRET_KEY : REFRESH_SECRET_KEY;
+    // Extract all claims
+    private Claims extractAllClaims(String token, boolean isRefreshToken) {
+        SecretKey key = isRefreshToken ? REFRESH_SECRET_KEY : ACCESS_SECRET_KEY;
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
 
-    private Boolean isTokenExpired(String token, boolean isAccessToken) {
-        return extractExpiration(token, isAccessToken).before(new Date());
+    // Check if token is expired
+    private Boolean isTokenExpired(String token, boolean isRefreshToken) {
+        return extractExpiration(token, isRefreshToken).before(new Date());
     }
 
-    public String generateAccessToken(String username) {
+    // Access token generation
+    public String generateAccessToken(String username, Integer userId) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username, 1000 * 60 * 60* 24, true);
+        claims.put("userId", userId); // Add user ID to token
+        return createToken(claims, username, 1000 * 60 * 60 * 24, false); // 24 hours expiration
     }
 
-    public String generateRefreshToken(String username) {
+    // Refresh token generation
+    public String generateRefreshToken(String username, Integer userId) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username, 1000L * 60 * 60 * 24 * 30, false);
+        claims.put("userId", userId); // Add userId to the claims
+        return createToken(claims, username, 1000 * 60 * 60 * 24 * 7, true); // 7 days expiry for refresh token
     }
 
-    private String createToken(Map<String, Object> claims, String subject, long expirationTime, boolean isAccessToken) {
-        SecretKey key = isAccessToken ? ACCESS_SECRET_KEY : REFRESH_SECRET_KEY;
+    // Token creation method
+    private String createToken(Map<String, Object> claims, String subject, long expirationTime, boolean isRefreshToken) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expirationTime))
-                .signWith(key)
+                .signWith(isRefreshToken ? REFRESH_SECRET_KEY : ACCESS_SECRET_KEY) // Use the appropriate key
                 .compact();
     }
 
-    public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token, true);
-        return (extractedUsername.equals(username) && !isTokenExpired(token, true));
+    // Token validation
+    public Boolean validateToken(String token, String username, boolean isRefreshToken) {
+        final String extractedUsername = extractUsername(token, isRefreshToken);
+        return (extractedUsername.equals(username) && !isTokenExpired(token, isRefreshToken));
     }
 
+    // Refresh token validation
     public Boolean validateRefreshToken(String token, String username) {
-        final String extractedUsername = extractUsername(token, false);
-        return (extractedUsername.equals(username) && !isTokenExpired(token, false));
+        return validateToken(token, username, true);
     }
 }

@@ -31,12 +31,13 @@ public class ClientController {
     public ResponseEntity<Map<String, String>> checkClient(@RequestParam String username, @RequestParam String password) {
         try {
             return clientService.checkClient(username, password).map(client -> {
-                // Token üretimi
-                String accessToken = jwtUtil.generateAccessToken(username);
-                String refreshToken = jwtUtil.generateRefreshToken(username);
+                // Generate tokens with userId
+                Integer userId = client.getID();
+                String accessToken = jwtUtil.generateAccessToken(username, userId);
+                String refreshToken = jwtUtil.generateRefreshToken(username, userId);
                 System.out.println("CheckClient called with username: " + username + " and password: " + password);
 
-                // Yalnızca token'ları döndür
+                // Return the tokens
                 return ResponseEntity.ok(Map.of(
                         "access_token", accessToken,
                         "refresh_token", refreshToken
@@ -83,9 +84,10 @@ public class ClientController {
             }
 
             String token = authorizationHeader.substring(7);
-            String username = jwtUtil.extractUsername(token, true);
+            Integer userId = jwtUtil.extractUserId(token, false);
+            String username = jwtUtil.extractUsername(token, false);
 
-            if (!jwtUtil.validateToken(token, username)) {
+            if (!jwtUtil.validateToken(token, username, false)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
             }
 
@@ -102,12 +104,14 @@ public class ClientController {
     @PostMapping("/refreshToken")
     public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
         try {
-            System.out.println("Extracting username from refresh token...");
-            String username = jwtUtil.extractUsername(refreshToken, false); // Refresh token olduğunu belirtiyoruz
+            System.out.println("Extracting username and userId from refresh token...");
+            Integer userId = jwtUtil.extractUserId(refreshToken, true); // Extract userId from refresh token
+            String username = jwtUtil.extractUsername(refreshToken, true); // Extract username from refresh token
             System.out.println("Validating refresh token...");
+
             if (jwtUtil.validateRefreshToken(refreshToken, username)) {
                 System.out.println("Generating new access token...");
-                String newAccessToken = jwtUtil.generateAccessToken(username);
+                String newAccessToken = jwtUtil.generateAccessToken(username, userId); // Generate new access token with userId
                 return ResponseEntity.ok(Map.of(
                         "access_token", newAccessToken,
                         "refresh_token", refreshToken)
