@@ -11,8 +11,8 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("API Dokümantasyonu")
+                        .title("Noron Control App")
                         .version("1.0.0")
-                        .description("Bu, Spring Boot uygulaması için API dokümantasyonudur."));
+                        .description(" API dokümantasyonu"));
     }
 }

@@ -23,13 +23,15 @@ public class DeviceModel {
     @Column(columnDefinition = "TINYINT(1)")
     private Boolean enable;
 
-    //Admin id
+    // Admin id
     @Column(name = "clientId")
     private Integer clientId;
 
-    //Adminin eklediği user idler
-    @Column(name = "otherClientIDs", columnDefinition = "TEXT")
-    private List<Integer> otherClientIds = new ArrayList<>(); ;
+    // Adminin eklediği user idler
+    @ElementCollection
+    @CollectionTable(name = "device_other_clients", joinColumns = @JoinColumn(name = "device_id"))
+    @Column(name = "otherClientId")
+    private List<Integer> otherClientIds = new ArrayList<>();
 
     @Column(name = "createdDateTime", columnDefinition = "DATETIME")
     private LocalDateTime createdDateTime;
@@ -47,5 +49,9 @@ public class DeviceModel {
 
     private Integer devType;
 
-    private List<String> device_tokens;
+    @ElementCollection
+    @CollectionTable(name = "device_tokens", joinColumns = @JoinColumn(name = "device_id"))
+    @Column(name = "token")
+    private List<String> deviceTokens = new ArrayList<>();
 }
+

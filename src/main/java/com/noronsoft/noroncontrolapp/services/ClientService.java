@@ -19,7 +19,11 @@ public class ClientService {
     }
 
     public Optional<ClientModel> checkClient(String username, String password) {
+        System.out.println("Searching for user: " + username + " with password: " + password);
         return clientRepository.findByUsernameAndPassword(username, password);
+    }
+    public Optional<?> clientDetail(String username) {
+        return clientRepository.findByUsername(username);
     }
 
     public void saveClient(SaveNewClientRequest saveNewClientRequest) {

@@ -31,7 +31,6 @@ public class DeviceController {
     @PostMapping("/checkDevice")
     public ResponseEntity<DeviceCheckResponse> checkDevice(@RequestParam Integer devid, @RequestParam String username, @RequestParam String password) {
         DeviceCheckResponse response = new DeviceCheckResponse();
-
         Optional<ClientModel> client = clientService.checkClient(username, password);
         if (client.isEmpty()) {
             response.setLogin("ERROR");
