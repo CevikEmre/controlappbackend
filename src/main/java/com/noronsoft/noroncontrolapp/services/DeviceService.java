@@ -1,9 +1,8 @@
 package com.noronsoft.noroncontrolapp.services;
 
-import com.noronsoft.noroncontrolapp.DTOs.AddOrDelClientToDeviceResponse;
-import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
+import com.noronsoft.noroncontrolapp.requestParams.DeviceAddParams;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,61 +21,33 @@ public class DeviceService {
     public Optional<DeviceModel> checkDevice(Integer devId) {
         return deviceRepository.findByDevId(devId);
     }
-    public boolean hasAccessToDevice(DeviceModel device, Integer clientId) {
-        if (device.getClientId().equals(clientId)) {
-            return true;
-        }
-        return device.getOtherClientIds().contains(clientId);
+
+    public boolean isAdminOfDevice(DeviceModel device, Integer userId) {
+        return device.getClientId().equals(userId);
     }
 
-    public AddOrDelClientToDeviceResponse addUserToDevice(ClientModel client, DeviceModel device) {
-        AddOrDelClientToDeviceResponse response = new AddOrDelClientToDeviceResponse();
-        response.setLogin("OK");
-        response.setDevice("OK");
-        response.setDeleted("NONE");
-
-        if (device.getClientId() == null) {
-            device.setClientId(client.getID());
-            deviceRepository.save(device);
-            response.setClientpermission("ADMIN");
-            response.setAdded("OK");
-            response.setClientperexist("NONE");
-        } else if (device.getOtherClientIds().contains(client.getID())) {
-            response.setClientpermission("USER");
-            response.setAdded("NONE");
-            response.setClientperexist("YES");
-        } else {
-            device.getOtherClientIds().add(client.getID());
-            deviceRepository.save(device);
-            response.setClientpermission("USER");
-            response.setAdded("OK");
-            response.setClientperexist("NONE");
+    public void addUserToDevice(Integer userId, DeviceModel device) {
+        if (!isAdminOfDevice(device, userId)) {
+            throw new IllegalArgumentException("Only the admin (clientId) can add users to this device.");
         }
 
-        return response;
+        if (!device.getOtherClientIds().contains(userId)) {
+            device.getOtherClientIds().add(userId);
+            deviceRepository.save(device);
+        }
     }
 
-    public AddOrDelClientToDeviceResponse removeUserFromDevice(ClientModel client, DeviceModel device) {
-        AddOrDelClientToDeviceResponse response = new AddOrDelClientToDeviceResponse();
-        response.setLogin("OK");
-        response.setDevice("OK");
-        response.setAdded("NONE");
-
-        if (client.getID().equals(device.getClientId())) {
-            response.setClientpermission("ADMIN");
-            response.setDeleted("NOTPOSSIBLE");
-        } else if (device.getOtherClientIds().contains(client.getID())) {
-            device.getOtherClientIds().remove(client.getID());
-            deviceRepository.save(device);
-            response.setClientpermission("USER");
-            response.setDeleted("YES");
-        } else {
-            response.setClientpermission("NONE");
-            response.setDeleted("NONE");
+    public void removeUserFromDevice(Integer userId, DeviceModel device) {
+        if (!isAdminOfDevice(device, userId)) {
+            throw new IllegalArgumentException("Only the admin (clientId) can remove users from this device.");
         }
 
-        return response;
+        if (!userId.equals(device.getClientId()) && device.getOtherClientIds().contains(userId)) {
+            device.getOtherClientIds().remove(userId);
+            deviceRepository.save(device);
+        }
     }
+
     public List<DeviceModel> getAllDevicesForClient(Integer clientId) {
         List<DeviceModel> adminDevices = deviceRepository.findByClientId(clientId);
         List<DeviceModel> userDevices = deviceRepository.findAll().stream()
@@ -86,5 +57,25 @@ public class DeviceService {
         adminDevices.addAll(userDevices);
         return adminDevices;
     }
-}
+    public DeviceModel addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
+        Optional<DeviceModel> existingDevice = deviceRepository.findByDevId(deviceAddParams.getDevId());
+        if (existingDevice.isPresent()) {
+            throw new IllegalArgumentException("Device with devId " + deviceAddParams.getDevId() + " already exists.");
+        }
 
+        DeviceModel device = new DeviceModel();
+        device.setDevId(deviceAddParams.getDevId());
+        device.setEnable(deviceAddParams.getEnable());
+        device.setClientId(deviceAddParams.getClientId());
+        device.setActiveDays(deviceAddParams.getActiveDays());
+        device.setYearlyPrice(deviceAddParams.getYearlyPrice());
+        device.setM2mNumber(deviceAddParams.getM2mNumber());
+        device.setM2mSerial(deviceAddParams.getM2mSerial());
+        device.setConnected(deviceAddParams.getConnected());
+        device.setDeviceType(deviceAddParams.getDeviceType());
+        device.setCreatedDateTime(deviceAddParams.getCreatedDateTime());
+        device.setActivatedDateTime(deviceAddParams.getActivatedDateTime());
+
+        return deviceRepository.save(device); // Eklenen cihazı geri döndürüyoruz
+    }
+}

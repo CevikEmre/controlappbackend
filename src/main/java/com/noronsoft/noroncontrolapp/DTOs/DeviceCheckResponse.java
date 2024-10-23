@@ -8,8 +8,6 @@ import java.util.List;
 @Getter
 @Setter
 public class DeviceCheckResponse {
-    private String login;
-    private String device;
     private Integer clientid;
     private String createddatetime;
     private String activateddatetime;

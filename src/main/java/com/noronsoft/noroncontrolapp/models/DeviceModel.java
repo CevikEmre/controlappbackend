@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.models;
 
+import com.noronsoft.noroncontrolapp.enums.DeviceType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "devices")
+@Table(name = "devices", uniqueConstraints = @UniqueConstraint(columnNames = "devId"))  // Unique constraint eklendi
 @Getter
 @Setter
 public class DeviceModel {
@@ -18,16 +19,15 @@ public class DeviceModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable = false)
     private Integer devId;
 
     @Column(columnDefinition = "TINYINT(1)")
     private Boolean enable;
 
-    // Admin id
-    @Column(name = "clientId")
+    @Column(name = "clientId", nullable = false)
     private Integer clientId;
 
-    // Adminin eklediği user idler
     @ElementCollection
     @CollectionTable(name = "device_other_clients", joinColumns = @JoinColumn(name = "device_id"))
     @Column(name = "otherClientId")
@@ -47,11 +47,11 @@ public class DeviceModel {
     @Column(columnDefinition = "TINYINT(1)")
     private Boolean connected;
 
-    private Integer devType;
+    @Enumerated(EnumType.STRING)
+    private DeviceType deviceType;
 
     @ElementCollection
     @CollectionTable(name = "device_tokens", joinColumns = @JoinColumn(name = "device_id"))
     @Column(name = "token")
     private List<String> deviceTokens = new ArrayList<>();
 }
-

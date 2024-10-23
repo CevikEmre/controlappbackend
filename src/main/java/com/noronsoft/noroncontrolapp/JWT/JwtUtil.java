@@ -15,7 +15,6 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // Separate secret keys for access and refresh tokens
     private final SecretKey ACCESS_SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final SecretKey REFRESH_SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
