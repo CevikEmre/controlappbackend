@@ -25,6 +25,9 @@ public class DeviceService {
     public boolean isAdminOfDevice(DeviceModel device, Integer userId) {
         return device.getClientId().equals(userId);
     }
+    public boolean hasAccessToDevice(DeviceModel device, Integer userId) {
+        return isAdminOfDevice(device, userId) || device.getOtherClientIds().contains(userId);
+    }
 
     public void addUserToDevice(Integer userId, DeviceModel device) {
         if (!isAdminOfDevice(device, userId)) {

@@ -1,18 +1,14 @@
 package com.noronsoft.noroncontrolapp.controllers;
 
 import com.noronsoft.noroncontrolapp.DTOs.GetMessageResponse;
-import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.models.MessageModel;
-import com.noronsoft.noroncontrolapp.services.ClientService;
 import com.noronsoft.noroncontrolapp.services.DeviceService;
 import com.noronsoft.noroncontrolapp.services.MessageService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -20,53 +16,46 @@ import java.util.Optional;
 @RequestMapping("/api/message")
 public class MessageController {
 
-    private final ClientService clientService;
     private final MessageService messageService;
     private final DeviceService deviceService;
 
     @Autowired
-    public MessageController(ClientService clientService, MessageService messageService, DeviceService deviceService) {
-        this.clientService = clientService;
+    public MessageController(MessageService messageService, DeviceService deviceService) {
         this.messageService = messageService;
         this.deviceService = deviceService;
     }
 
     @PostMapping("/getMessage")
-    public ResponseEntity<GetMessageResponse> getMessage(@RequestParam String username, @RequestParam String password, @RequestParam Integer devid, @RequestParam Integer clientid) {
+    public ResponseEntity<GetMessageResponse> getMessage(@RequestParam Integer devid, HttpServletRequest request) {
         GetMessageResponse response = new GetMessageResponse();
 
-        Optional<ClientModel> client = clientService.checkClient(username, password);
-        if (client.isEmpty()) {
-            response.setLogin("ERROR");
-            response.setDevice("ERROR");
+        Integer userId = (Integer) request.getAttribute("userId");
 
-            return ResponseEntity.badRequest().body(response);
-        }
-
+        // Cihazı kontrol et
         Optional<DeviceModel> device = deviceService.checkDevice(devid);
         if (device.isEmpty()) {
             response.setLogin("OK");
             response.setDevice("ERROR");
-
             return ResponseEntity.notFound().build();
         }
 
-        if (!deviceService.hasAccessToDevice(device.get(), clientid)) {
+        if (!deviceService.hasAccessToDevice(device.get(), userId)) {
             response.setLogin("OK");
             response.setDevice("ERROR");
             response.setMessage("Access denied");
-
             return ResponseEntity.badRequest().body(response);
         }
-        Optional<MessageModel> message = messageService.getMessageByDevice(devid, clientid);
+
+        // Mesajı getir
+        Optional<MessageModel> message = messageService.getMessageByDevice(devid, userId);
         if (message.isEmpty()) {
             response.setLogin("OK");
             response.setDevice("OK");
             response.setMessage("No message found");
-
             return ResponseEntity.badRequest().body(response);
         }
 
+        // Mesaj bulunduysa yanıtı oluştur
         MessageModel msg = message.get();
         response.setLogin("OK");
         response.setDevice("OK");
