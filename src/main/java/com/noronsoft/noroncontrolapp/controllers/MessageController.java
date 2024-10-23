@@ -43,6 +43,7 @@ public class MessageController {
             response.setLogin("OK");
             response.setDevice("ERROR");
             response.setMessage("Access denied");
+
             return ResponseEntity.badRequest().body(response);
         }
 
