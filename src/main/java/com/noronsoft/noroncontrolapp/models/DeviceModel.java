@@ -8,10 +8,12 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
-@Table(name = "devices", uniqueConstraints = @UniqueConstraint(columnNames = "devId"))  // Unique constraint eklendi
+@Table(name = "devices", uniqueConstraints = @UniqueConstraint(columnNames = "devId"))
 @Getter
 @Setter
 public class DeviceModel {
@@ -31,7 +33,7 @@ public class DeviceModel {
     @ElementCollection
     @CollectionTable(name = "device_other_clients", joinColumns = @JoinColumn(name = "device_id"))
     @Column(name = "otherClientId")
-    private List<Integer> otherClientIds = new ArrayList<>();
+    private Set<Integer> otherClientIds = new HashSet<>();
 
     @Column(name = "createdDateTime", columnDefinition = "DATETIME")
     private LocalDateTime createdDateTime;
@@ -54,4 +56,10 @@ public class DeviceModel {
     @CollectionTable(name = "device_tokens", joinColumns = @JoinColumn(name = "device_id"))
     @Column(name = "token")
     private List<String> deviceTokens = new ArrayList<>();
+
+
+    public void addOtherClientId(Integer clientId) {
+        otherClientIds.add(clientId);
+    }
 }
+

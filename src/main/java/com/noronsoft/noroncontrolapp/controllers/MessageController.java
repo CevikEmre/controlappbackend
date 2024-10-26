@@ -39,7 +39,7 @@ public class MessageController {
             return ResponseEntity.notFound().build();
         }
 
-        if (!deviceService.hasAccessToDevice(device.get(), userId)) {
+        if (deviceService.hasAccessToDevice(device.get(), userId)) {
             response.setLogin("OK");
             response.setDevice("ERROR");
             response.setMessage("Access denied");

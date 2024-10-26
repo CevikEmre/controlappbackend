@@ -26,6 +26,10 @@ public class ClientService {
         return clientRepository.findByUsername(username);
     }
 
+    public Optional<ClientModel> findByPhone(String phone) {
+        return clientRepository.findByPhone(phone);
+    }
+
     public void saveClient(SaveNewClientRequest saveNewClientRequest) {
         ClientModel client = new ClientModel();
         client.setUsername(saveNewClientRequest.getUsername());

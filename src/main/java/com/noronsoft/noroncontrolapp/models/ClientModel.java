@@ -56,7 +56,5 @@ public class ClientModel {
     @NotNull
     private String deviceToken;
 
-    @Transient
-    private String login;
 
 }
