@@ -25,6 +25,11 @@ public class JwtFilter extends HttpFilter {
 
         String requestPath = request.getRequestURI();
 
+        if (requestPath.contains("/swagger-ui/") || requestPath.contains("/v3/api-docs")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         if (!requestPath.contains("/api/client")) {
             String authorizationHeader = request.getHeader("Authorization");
 

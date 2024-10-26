@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 public class ClientModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Integer ID;
 
     @NotNull

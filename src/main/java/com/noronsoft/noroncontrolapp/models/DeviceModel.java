@@ -27,7 +27,7 @@ public class DeviceModel {
     @Column(columnDefinition = "TINYINT(1)")
     private Boolean enable;
 
-    @Column(name = "clientId", nullable = false)
+    @Column(name = "clientId")
     private Integer clientId;
 
     @ElementCollection
