@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "clients")
@@ -14,7 +16,7 @@ import java.time.LocalDateTime;
 @Setter
 public class ClientModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer ID;
 
     @NotNull
@@ -56,5 +58,6 @@ public class ClientModel {
     @NotNull
     private String deviceToken;
 
-
+    @ManyToMany(mappedBy = "otherClients")
+    private Set<DeviceModel> devices = new HashSet<>();
 }

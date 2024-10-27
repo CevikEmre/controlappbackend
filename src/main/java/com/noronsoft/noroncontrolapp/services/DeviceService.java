@@ -15,12 +15,10 @@ import java.util.Optional;
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
-    private final ClientService clientService;
 
     @Autowired
-    public DeviceService(DeviceRepository deviceRepository, ClientService clientService) {
+    public DeviceService(DeviceRepository deviceRepository) {
         this.deviceRepository = deviceRepository;
-        this.clientService = clientService;
     }
 
     public Optional<DeviceModel> checkDevice(Integer devId) {
@@ -32,49 +30,76 @@ public class DeviceService {
     }
 
     public boolean hasAccessToDevice(DeviceModel device, Integer userId) {
-        return isAdminOfDevice(device, userId) || device.getOtherClientIds().contains(userId);
+        // device.getOtherClients() çağrısı ile erişim kontrolü
+        return isAdminOfDevice(device, userId) || device.getOtherClients().stream()
+                .anyMatch(client -> client.getID().equals(userId));
     }
 
     @Transactional
-    public void addUserToDevice(DeviceModel device, Integer adminUserId, ClientModel client) {
+    public void addUserToDevice(DeviceModel device, Integer adminUserId, ClientModel client, String deviceToken) {
         if (device.getClientId() == null) {
             device.setClientId(client.getID());
         } else {
             if (!isAdminOfDevice(device, adminUserId)) {
                 throw new IllegalArgumentException("Only the admin (clientId) can add users to this device.");
             }
-            device.addOtherClientId(client.getID()); // Helper metodu kullanarak ekleme
+            if (device.getOtherClients().contains(client)) {
+                throw new IllegalArgumentException("User is already registered to this device.");
+            }
+            device.getOtherClients().add(client);
         }
-        deviceRepository.save(device); // Güncellemeyi kaydet
+
+        // deviceToken ekleme işlemi
+        if (deviceToken != null && !device.getDeviceTokens().contains(deviceToken)) {
+            device.addDeviceToken(deviceToken);
+        }
+
+        deviceRepository.save(device);
+
+        // Doğrulama işlemi: Kullanıcı ve token gerçekten eklendi mi?
+        if (!device.getOtherClients().contains(client) || (deviceToken != null && !device.getDeviceTokens().contains(deviceToken))) {
+            throw new IllegalStateException("User or token could not be added to the device.");
+        }
     }
 
 
     @Transactional
-    public void removeUserFromDevice(DeviceModel device, Integer adminUserId, Integer userId) {
+    public void removeUserFromDevice(DeviceModel device, Integer adminUserId, Integer userId, String tokenToRemove) {
         if (!isAdminOfDevice(device, adminUserId)) {
             throw new IllegalArgumentException("Only the admin (clientId) can remove users from this device.");
         }
 
-        if (device.getOtherClientIds().contains(userId)) {
-            device.getOtherClientIds().remove(userId); // Kullanıcı ID'sini listeden çıkarıyoruz
-            deviceRepository.save(device); // Güncellemeleri kaydediyoruz
+        if (adminUserId.equals(userId)) {
+            throw new IllegalArgumentException("Admin user cannot be removed from the device.");
+        }
+
+        device.getOtherClients().removeIf(client -> client.getID().equals(userId));
+        device.getDeviceTokens().remove(tokenToRemove);
+
+        deviceRepository.save(device);
+
+
+        boolean userStillExists = device.getOtherClients().stream().anyMatch(client -> client.getID().equals(userId));
+        boolean tokenStillExists = device.getDeviceTokens().contains(tokenToRemove);
+
+        if (userStillExists || tokenStillExists) {
+            throw new IllegalStateException("User or token could not be removed from the device.");
         }
     }
 
     public List<DeviceModel> getAllDevicesForClient(Integer clientId) {
-        // Kullanıcının admin olduğu cihazları alıyoruz
         List<DeviceModel> adminDevices = deviceRepository.findByClientId(clientId);
-        // Kullanıcının ekli olduğu diğer cihazları filtreliyoruz
         List<DeviceModel> userDevices = deviceRepository.findAll().stream()
-                .filter(device -> device.getOtherClientIds().contains(clientId))
+                .filter(device -> device.getOtherClients().stream()
+                        .anyMatch(client -> client.getID().equals(clientId)))
                 .toList();
 
-        adminDevices.addAll(userDevices); // Tüm cihazları birleştiriyoruz
+        adminDevices.addAll(userDevices);
+
         return adminDevices;
     }
 
     public DeviceModel addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
-        // Aynı devId'ye sahip bir cihaz varsa hata fırlat
         Optional<DeviceModel> existingDevice = deviceRepository.findByDevId(deviceAddParams.getDevId());
         if (existingDevice.isPresent()) {
             throw new IllegalArgumentException("Device with devId " + deviceAddParams.getDevId() + " already exists.");

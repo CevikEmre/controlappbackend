@@ -7,9 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -30,10 +28,13 @@ public class DeviceModel {
     @Column(name = "clientId")
     private Integer clientId;
 
-    @ElementCollection
-    @CollectionTable(name = "device_other_clients", joinColumns = @JoinColumn(name = "device_id"))
-    @Column(name = "otherClientId")
-    private Set<Integer> otherClientIds = new HashSet<>();
+    @ManyToMany
+    @JoinTable(
+            name = "device_other_clients",
+            joinColumns = @JoinColumn(name = "device_id"),
+            inverseJoinColumns = @JoinColumn(name = "client_id")
+    )
+    private Set<ClientModel> otherClients = new HashSet<>();
 
     @Column(name = "createdDateTime", columnDefinition = "DATETIME")
     private LocalDateTime createdDateTime;
@@ -55,11 +56,15 @@ public class DeviceModel {
     @ElementCollection
     @CollectionTable(name = "device_tokens", joinColumns = @JoinColumn(name = "device_id"))
     @Column(name = "token")
-    private List<String> deviceTokens = new ArrayList<>();
+    private Set<String> deviceTokens = new HashSet<>();
 
+    // Diğer client eklemek için yöntem
+    public void addOtherClient(ClientModel client) {
+        otherClients.add(client);
+    }
 
-    public void addOtherClientId(Integer clientId) {
-        otherClientIds.add(clientId);
+    // Token eklemek için yöntem
+    public void addDeviceToken(String deviceToken) {
+        deviceTokens.add(deviceToken);
     }
 }
-
