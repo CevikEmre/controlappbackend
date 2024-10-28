@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DeviceService {
@@ -47,19 +48,13 @@ public class DeviceService {
                 throw new IllegalArgumentException("User is already registered to this device.");
             }
             device.getOtherClients().add(client);
-        }
 
-        // deviceToken ekleme işlemi
+        }
         if (deviceToken != null && !device.getDeviceTokens().contains(deviceToken)) {
-            device.addDeviceToken(deviceToken);
+            device.getDeviceTokens().add(deviceToken);
         }
 
         deviceRepository.save(device);
-
-        // Doğrulama işlemi: Kullanıcı ve token gerçekten eklendi mi?
-        if (!device.getOtherClients().contains(client) || (deviceToken != null && !device.getDeviceTokens().contains(deviceToken))) {
-            throw new IllegalStateException("User or token could not be added to the device.");
-        }
     }
 
 
@@ -87,16 +82,14 @@ public class DeviceService {
         }
     }
 
-    public List<DeviceModel> getAllDevicesForClient(Integer clientId) {
-        List<DeviceModel> adminDevices = deviceRepository.findByClientId(clientId);
-        List<DeviceModel> userDevices = deviceRepository.findAll().stream()
-                .filter(device -> device.getOtherClients().stream()
-                        .anyMatch(client -> client.getID().equals(clientId)))
-                .toList();
+    public List<DeviceModel> getAllDevicesForClient(Integer userId) {
+        List<DeviceModel> allDevices = deviceRepository.findAll();
 
-        adminDevices.addAll(userDevices);
-
-        return adminDevices;
+        return allDevices.stream()
+                .filter(device -> device.getClientId().equals(userId) ||
+                        device.getOtherClients().stream()
+                                .anyMatch(client -> client.getID().equals(userId)))
+                .collect(Collectors.toList());
     }
 
     public DeviceModel addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {

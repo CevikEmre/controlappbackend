@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -59,5 +60,6 @@ public class ClientModel {
     private String deviceToken;
 
     @ManyToMany(mappedBy = "otherClients")
+    @JsonBackReference
     private Set<DeviceModel> devices = new HashSet<>();
 }

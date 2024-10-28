@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.noronsoft.noroncontrolapp.enums.DeviceType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -34,6 +35,7 @@ public class DeviceModel {
             joinColumns = @JoinColumn(name = "device_id"),
             inverseJoinColumns = @JoinColumn(name = "client_id")
     )
+    @JsonManagedReference
     private Set<ClientModel> otherClients = new HashSet<>();
 
     @Column(name = "createdDateTime", columnDefinition = "DATETIME")
@@ -58,13 +60,4 @@ public class DeviceModel {
     @Column(name = "token")
     private Set<String> deviceTokens = new HashSet<>();
 
-    // Diğer client eklemek için yöntem
-    public void addOtherClient(ClientModel client) {
-        otherClients.add(client);
-    }
-
-    // Token eklemek için yöntem
-    public void addDeviceToken(String deviceToken) {
-        deviceTokens.add(deviceToken);
-    }
 }
