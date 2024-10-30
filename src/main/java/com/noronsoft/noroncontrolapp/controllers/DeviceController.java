@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.controllers;
 
+import com.noronsoft.noroncontrolapp.DTOs.DeviceDto;
 import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.requestParams.DeviceAddParams;
@@ -70,7 +71,6 @@ public class DeviceController {
         return ResponseEntity.ok(message);
     }
 
-
     @DeleteMapping("/removeUserFromDevice")
     public ResponseEntity<String> removeUserFromDevice(@RequestParam Integer deviceId, @RequestParam String phone, HttpServletRequest request) {
         Integer adminUserId = (Integer) request.getAttribute("userId");
@@ -111,7 +111,7 @@ public class DeviceController {
     }
 
     @GetMapping("/getAllDevicesForClient")
-    public ResponseEntity<List<DeviceModel>> getAllDevicesForClient(HttpServletRequest httpServletRequest) {
+    public ResponseEntity<List<DeviceDto>> getAllDevicesForClient(HttpServletRequest httpServletRequest) {
         Integer userId = (Integer) httpServletRequest.getAttribute("userId");
 
         if (userId == null) {
@@ -119,19 +119,36 @@ public class DeviceController {
             return ResponseEntity.badRequest().build();
         }
 
-        List<DeviceModel> devices = deviceService.getAllDevicesForClient(userId);
-
+        List<DeviceDto> devices = deviceService.getAllDevicesForClient(userId);
         System.out.println("Fetched devices for client with ID: " + userId);
         return ResponseEntity.ok(devices);
     }
 
+    @GetMapping("/getDeviceDetail")
+    public ResponseEntity<DeviceDto> getDeviceDetail(@RequestParam Integer deviceId, HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        Optional<DeviceDto> deviceDtoOptional = deviceService.getDeviceDetail(deviceId, userId);
+
+        if (deviceDtoOptional.isEmpty()) {
+            System.out.println("Device not found or access denied for device ID: " + deviceId);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+        }
+
+        System.out.println("Fetched device details for ID: " + deviceId);
+        return ResponseEntity.ok(deviceDtoOptional.get());
+    }
 
     @PostMapping("/addDevice")
-    public ResponseEntity<DeviceModel> addDevice(@RequestBody DeviceAddParams deviceAddParams) {
+    public ResponseEntity<DeviceDto> addDevice(@RequestBody DeviceAddParams deviceAddParams) {
         try {
-            DeviceModel device = deviceService.addDevice(deviceAddParams);
-            System.out.println("Device added with ID: " + device.getDevId());
-            return ResponseEntity.ok(device);
+            DeviceDto deviceDto = deviceService.addDevice(deviceAddParams);
+            System.out.println("Device added with ID: " + deviceDto.getDevId());
+            return ResponseEntity.ok(deviceDto);
         } catch (IllegalArgumentException e) {
             System.out.println("Failed to add device. Reason: " + e.getMessage());
             return ResponseEntity.badRequest().build();

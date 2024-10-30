@@ -80,7 +80,8 @@ public class ClientController {
     public ResponseEntity<?> getClientDetails(@RequestHeader("Authorization") String authorizationHeader) {
         try {
             if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Missing or invalid Authorization header"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Missing or invalid Authorization header"));
             }
 
             String token = authorizationHeader.substring(7);
@@ -88,18 +89,22 @@ public class ClientController {
             String username = jwtUtil.extractUsername(token, false);
 
             if (!jwtUtil.validateToken(token, username, false)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid token"));
             }
 
             return clientService.clientDetail(username)
                     .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Client not found")));
+                    .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body((com.noronsoft.noroncontrolapp.DTOs.ClientDto) Map.of("error", "Client not found")));
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An error occurred while processing the request"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An error occurred while processing the request"));
         }
     }
+
 
     @PostMapping("/refreshToken")
     public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {

@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.services;
 
+import com.noronsoft.noroncontrolapp.DTOs.ClientDto;
 import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.repositories.ClientRepository;
 import com.noronsoft.noroncontrolapp.requestParams.SaveNewClientRequest;
@@ -22,8 +23,10 @@ public class ClientService {
         System.out.println("Searching for user: " + username + " with password: " + password);
         return clientRepository.findByUsernameAndPassword(username, password);
     }
-    public Optional<?> clientDetail(String username) {
-        return clientRepository.findByUsername(username);
+
+    public Optional<ClientDto> clientDetail(String username) {
+        return clientRepository.findByUsername(username)
+                .map(this::convertToClientDto); // ClientModel -> ClientDto dönüşümü
     }
 
     public Optional<ClientModel> findByPhone(String phone) {
@@ -45,5 +48,18 @@ public class ClientService {
         client.setCreatedDateTime(LocalDateTime.now());
 
         clientRepository.save(client);
+    }
+
+    public ClientDto convertToClientDto(ClientModel client) {
+        ClientDto clientDto = new ClientDto();
+        clientDto.setId(client.getID());
+        clientDto.setName(client.getName());
+        clientDto.setAddress(client.getAddress());
+        clientDto.setCity(client.getCity());
+        clientDto.setCountry(client.getCountry());
+        clientDto.setEmail(client.getEmail());
+        clientDto.setPhone(client.getPhone());
+        clientDto.setEnable(client.getEnable());
+        return clientDto;
     }
 }

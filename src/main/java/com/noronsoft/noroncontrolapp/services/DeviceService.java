@@ -1,5 +1,7 @@
 package com.noronsoft.noroncontrolapp.services;
 
+import com.noronsoft.noroncontrolapp.DTOs.ClientDto;
+import com.noronsoft.noroncontrolapp.DTOs.DeviceDto;
 import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,7 +34,6 @@ public class DeviceService {
     }
 
     public boolean hasAccessToDevice(DeviceModel device, Integer userId) {
-        // device.getOtherClients() çağrısı ile erişim kontrolü
         return isAdminOfDevice(device, userId) || device.getOtherClients().stream()
                 .anyMatch(client -> client.getID().equals(userId));
     }
@@ -48,7 +50,6 @@ public class DeviceService {
                 throw new IllegalArgumentException("User is already registered to this device.");
             }
             device.getOtherClients().add(client);
-
         }
         if (deviceToken != null && !device.getDeviceTokens().contains(deviceToken)) {
             device.getDeviceTokens().add(deviceToken);
@@ -56,7 +57,6 @@ public class DeviceService {
 
         deviceRepository.save(device);
     }
-
 
     @Transactional
     public void removeUserFromDevice(DeviceModel device, Integer adminUserId, Integer userId, String tokenToRemove) {
@@ -73,7 +73,6 @@ public class DeviceService {
 
         deviceRepository.save(device);
 
-
         boolean userStillExists = device.getOtherClients().stream().anyMatch(client -> client.getID().equals(userId));
         boolean tokenStillExists = device.getDeviceTokens().contains(tokenToRemove);
 
@@ -82,17 +81,28 @@ public class DeviceService {
         }
     }
 
-    public List<DeviceModel> getAllDevicesForClient(Integer userId) {
+    public List<DeviceDto> getAllDevicesForClient(Integer userId) {
         List<DeviceModel> allDevices = deviceRepository.findAll();
 
         return allDevices.stream()
                 .filter(device -> device.getClientId().equals(userId) ||
                         device.getOtherClients().stream()
                                 .anyMatch(client -> client.getID().equals(userId)))
+                .map(this::convertToDeviceDto)
                 .collect(Collectors.toList());
     }
 
-    public DeviceModel addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
+    public Optional<DeviceDto> getDeviceDetail(Integer deviceId, Integer userId) {
+        Optional<DeviceModel> deviceOptional = checkDevice(deviceId);
+
+        if (deviceOptional.isEmpty() || !hasAccessToDevice(deviceOptional.get(), userId)) {
+            return Optional.empty();
+        }
+
+        return deviceOptional.map(this::convertToDeviceDto);
+    }
+
+    public DeviceDto addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
         Optional<DeviceModel> existingDevice = deviceRepository.findByDevId(deviceAddParams.getDevId());
         if (existingDevice.isPresent()) {
             throw new IllegalArgumentException("Device with devId " + deviceAddParams.getDevId() + " already exists.");
@@ -107,6 +117,40 @@ public class DeviceService {
         device.setDeviceType(deviceAddParams.getDeviceType());
         device.setCreatedDateTime(deviceAddParams.getCreatedDateTime());
 
-        return deviceRepository.save(device);
+        DeviceModel savedDevice = deviceRepository.save(device);
+        return convertToDeviceDto(savedDevice);
+    }
+
+    private DeviceDto convertToDeviceDto(DeviceModel device) {
+        DeviceDto deviceDto = new DeviceDto();
+        deviceDto.setId(device.getId());
+        deviceDto.setDevId(device.getDevId());
+        deviceDto.setEnable(device.getEnable());
+        deviceDto.setClientId(device.getClientId());
+        deviceDto.setCreatedDateTime(device.getCreatedDateTime());
+        deviceDto.setActivatedDateTime(device.getActivatedDateTime());
+        deviceDto.setActiveDays(device.getActiveDays());
+        deviceDto.setYearlyPrice(device.getYearlyPrice());
+        deviceDto.setM2mNumber(device.getM2mNumber());
+        deviceDto.setM2mSerial(device.getM2mSerial());
+        deviceDto.setConnected(device.getConnected());
+        deviceDto.setDeviceType(device.getDeviceType());
+        deviceDto.setOtherClients(convertToClientDtos(device.getOtherClients()));
+        return deviceDto;
+    }
+
+    private Set<ClientDto> convertToClientDtos(Set<ClientModel> clients) {
+        return clients.stream().map(client -> {
+            ClientDto clientDto = new ClientDto();
+            clientDto.setId(client.getID());
+            clientDto.setName(client.getName());
+            clientDto.setAddress(client.getAddress());
+            clientDto.setCity(client.getCity());
+            clientDto.setCountry(client.getCountry());
+            clientDto.setEmail(client.getEmail());
+            clientDto.setPhone(client.getPhone());
+            clientDto.setEnable(client.getEnable());
+            return clientDto;
+        }).collect(Collectors.toSet());
     }
 }
