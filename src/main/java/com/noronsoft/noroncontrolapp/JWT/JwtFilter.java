@@ -25,7 +25,6 @@ public class JwtFilter extends HttpFilter {
 
         String requestPath = request.getRequestURI();
 
-        // Swagger ve API Dokümantasyonu İsteklerini Hariç Tut
         if (requestPath.startsWith("/swagger-ui/") || requestPath.startsWith("/v3/api-docs")) {
             chain.doFilter(request, response);
             return;
@@ -36,7 +35,6 @@ public class JwtFilter extends HttpFilter {
             return;
         }
 
-        // JWT Kontrolü Yap
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
