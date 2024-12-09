@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 public class AppConfig {
+
     @Bean
     public ConcurrentHashMap<String, WebSocketSession> activeSessions() {
         return new ConcurrentHashMap<>();

@@ -25,41 +25,43 @@ public class JwtFilter extends HttpFilter {
 
         String requestPath = request.getRequestURI();
 
-        if (requestPath.contains("/swagger-ui/") || requestPath.contains("/v3/api-docs")) {
+        // Swagger ve API Dokümantasyonu İsteklerini Hariç Tut
+        if (requestPath.startsWith("/swagger-ui/") || requestPath.startsWith("/v3/api-docs")) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (!requestPath.contains("/api/client")) {
-            String authorizationHeader = request.getHeader("Authorization");
+        if (requestPath.equals("/chat") && "Upgrade".equalsIgnoreCase(request.getHeader("Connection"))) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+        // JWT Kontrolü Yap
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.getWriter().write("Missing or invalid Authorization header");
+            return;
+        }
+
+        String token = authorizationHeader.substring(7);
+        try {
+            String username = jwtUtil.extractUsername(token, false);
+            Integer userId = jwtUtil.extractUserId(token, false);
+
+            if (!jwtUtil.validateToken(token, username, false)) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.getWriter().write("Missing or invalid Authorization header");
+                response.getWriter().write("Invalid token");
                 return;
             }
 
-            String token = authorizationHeader.substring(7);
+            request.setAttribute("userId", userId);
+            request.setAttribute("username", username);
 
-            try {
-
-                String username = jwtUtil.extractUsername(token, false);
-                Integer userId = jwtUtil.extractUserId(token, false);
-
-                if (!jwtUtil.validateToken(token, username, false)) {
-                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                    response.getWriter().write("Invalid token");
-                    return;
-                }
-
-                request.setAttribute("userId", userId);
-                request.setAttribute("username", username);
-
-            } catch (Exception e) {
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.getWriter().write("Error while validating token");
-                return;
-            }
+        } catch (Exception e) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.getWriter().write("Error while validating token");
+            return;
         }
 
         chain.doFilter(request, response);
