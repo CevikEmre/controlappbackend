@@ -25,15 +25,11 @@ public class JwtFilter extends HttpFilter {
 
         String requestPath = request.getRequestURI();
 
-        if (requestPath.startsWith("/swagger-ui/") || requestPath.startsWith("/v3/api-docs")) {
+        if (requestPath.contains("/swagger-ui/") || requestPath.contains("/v3/api-docs")) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (requestPath.equals("/chat") && "Upgrade".equalsIgnoreCase(request.getHeader("Connection"))) {
-            chain.doFilter(request, response);
-            return;
-        }
 
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
