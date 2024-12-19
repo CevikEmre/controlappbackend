@@ -29,6 +29,10 @@ public class JwtFilter extends HttpFilter {
             chain.doFilter(request, response);
             return;
         }
+        if (requestPath.contains("/api/client")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
 
         String authorizationHeader = request.getHeader("Authorization");
