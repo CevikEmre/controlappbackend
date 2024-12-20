@@ -31,7 +31,6 @@ public class ClientController {
     public ResponseEntity<Map<String, String>> checkClient(@RequestParam String username, @RequestParam String password) {
         try {
             return clientService.checkClient(username, password).map(client -> {
-                // Generate tokens with userId
                 Integer userId = client.getID();
                 String accessToken = jwtUtil.generateAccessToken(username, userId);
                 String refreshToken = jwtUtil.generateRefreshToken(username, userId);
@@ -110,13 +109,13 @@ public class ClientController {
     public ResponseEntity<?> refreshToken(@RequestParam String refreshToken) {
         try {
             System.out.println("Extracting username and userId from refresh token...");
-            Integer userId = jwtUtil.extractUserId(refreshToken, true); // Extract userId from refresh token
-            String username = jwtUtil.extractUsername(refreshToken, true); // Extract username from refresh token
+            Integer userId = jwtUtil.extractUserId(refreshToken, true);
+            String username = jwtUtil.extractUsername(refreshToken, true);
             System.out.println("Validating refresh token...");
 
             if (jwtUtil.validateRefreshToken(refreshToken, username)) {
                 System.out.println("Generating new access token...");
-                String newAccessToken = jwtUtil.generateAccessToken(username, userId); // Generate new access token with userId
+                String newAccessToken = jwtUtil.generateAccessToken(username, userId);
                 return ResponseEntity.ok(Map.of(
                         "access_token", newAccessToken,
                         "refresh_token", refreshToken)
