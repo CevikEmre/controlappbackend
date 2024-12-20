@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.pusher;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.noronsoft.noroncontrolapp.FCM.FCMService;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
@@ -37,12 +38,16 @@ public class PusherWebhookController {
                 System.out.println("Processing event: " + eventName);
 
                 if ("client_event".equals(eventName)) {
-                    Map<String, String> eventData = (Map<String, String>) event.get("data");
-                    String error = eventData.get("error");
-                    String deviceId = eventData.get("deviceId");
-                    System.out.println("Received client-error with deviceId: " + deviceId + ", error: " + error);
+                    try {
+                        Map<String, Object> eventData = new ObjectMapper().readValue((String) event.get("data"), Map.class);
+                        String error = (String) eventData.get("error");
+                        String deviceId = (String) eventData.get("deviceId");
+                        System.out.println("Received client-error with deviceId: " + deviceId + ", error: " + error);
 
-                    sendErrorNotification(deviceId, error);
+                        sendErrorNotification(deviceId, error);
+                    } catch (Exception e) {
+                        System.err.println("Error parsing event data: " + e.getMessage());
+                    }
                 } else {
                     System.out.println("Unhandled event name: " + eventName);
                 }
