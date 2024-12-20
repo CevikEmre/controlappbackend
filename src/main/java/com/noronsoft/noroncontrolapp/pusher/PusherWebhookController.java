@@ -3,11 +3,9 @@ package com.noronsoft.noroncontrolapp.pusher;
 import com.noronsoft.noroncontrolapp.FCM.FCMService;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
+import com.pusher.rest.Pusher;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -20,10 +18,12 @@ public class PusherWebhookController {
 
     private final FCMService fcmService;
     private final DeviceRepository deviceRepository;
+    private final Pusher pusher;
 
-    public PusherWebhookController(FCMService fcmService, DeviceRepository deviceRepository) {
+    public PusherWebhookController(FCMService fcmService, DeviceRepository deviceRepository, Pusher pusher) {
         this.fcmService = fcmService;
         this.deviceRepository = deviceRepository;
+        this.pusher = pusher;
     }
 
     @PostMapping("/webhook")
@@ -67,5 +67,14 @@ public class PusherWebhookController {
         } else {
             System.out.println("Cihaz bulunamadı: " + deviceId);
         }
+    }
+
+    @PostMapping("/auth")
+    public ResponseEntity<String> authenticate(
+            @RequestParam("socket_id") String socketId,
+            @RequestParam("channel_name") String channelName) {
+
+        String auth = pusher.authenticate(socketId, channelName);
+        return ResponseEntity.ok(auth);
     }
 }
