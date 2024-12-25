@@ -30,7 +30,6 @@ public class PusherWebhookController {
     @PostMapping("/webhook")
     public ResponseEntity<String> handlePusherWebhook(@RequestBody Map<String, Object> payload) {
         System.out.println("Webhook received payload: " + payload);
-
         if (payload.containsKey("events")) {
             List<Map<String, Object>> events = (List<Map<String, Object>>) payload.get("events");
             for (Map<String, Object> event : events) {
