@@ -38,13 +38,22 @@ public class FCMService {
     }
 
     public void sendPushNotification(Set<String> deviceTokens, String title, String body) {
+        System.out.println("Bildirim gönderimi başlatıldı.");
+        System.out.println("Başlık: " + title);
+        System.out.println("İçerik: " + body);
+        System.out.println("Cihaz Token'ları: " + deviceTokens);
+
         for (String token : deviceTokens) {
+            System.out.println("Token işleniyor: " + token);
             sendSinglePushNotification(token, title, body);
         }
+
+        System.out.println("Tüm token'ler için bildirim gönderimi tamamlandı.");
     }
 
     private void sendSinglePushNotification(String deviceToken, String title, String body) {
         try {
+            System.out.println("Bildirim oluşturuluyor. Token: " + deviceToken);
             Message message = Message.builder()
                     .setToken(deviceToken)
                     .setNotification(Notification.builder()
@@ -53,10 +62,12 @@ public class FCMService {
                             .build())
                     .build();
 
+            System.out.println("FirebaseMessaging üzerinden gönderim başlatılıyor.");
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("FCM bildirimi başarıyla gönderildi: " + response);
+            System.out.println("FCM bildirimi başarıyla gönderildi. Yanıt: " + response);
         } catch (Exception e) {
-            System.err.println("FCM bildirimi gönderilirken bir hata oluştu: " + e.getMessage());
+            System.err.println("FCM bildirimi gönderilirken bir hata oluştu. Token: " + deviceToken);
+            System.err.println("Hata Mesajı: " + e.getMessage());
         }
     }
 }

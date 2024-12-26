@@ -25,7 +25,6 @@ public class IOController {
             HttpServletRequest httpServletRequest) {
 
         try {
-            // Servis katmanına yönlendir
             return ioService.processSendCommand(request, httpServletRequest);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

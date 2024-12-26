@@ -49,11 +49,20 @@ public class IOService {
         }
 
         String channel = "private-device-" + deviceId;
-        Map<String, Object> data = Map.of("setrelay", setRelay, "time", time, "type", type);
+
+        // Data'yı doğrudan Map olarak oluştur
+        Map<String, Object> data = Map.of(
+                "setrelay", setRelay,
+                "time", time,
+                "type", type
+        );
+
         String event = "relay-command";
 
+        // Data'yı doğrudan gönder
         pusher.trigger(channel, event, data);
 
         return ResponseEntity.ok(Map.of("setrelay", setRelay));
     }
+
 }
