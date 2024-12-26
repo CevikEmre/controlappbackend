@@ -1,86 +1,59 @@
 package com.noronsoft.noroncontrolapp.services;
 
-import com.noronsoft.noroncontrolapp.DTOs.GetIoResponse;
-import com.noronsoft.noroncontrolapp.DTOs.SetIOResponse;
+import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
-import com.noronsoft.noroncontrolapp.models.IoCommandModel;
-import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
-import com.noronsoft.noroncontrolapp.repositories.IORepository;
-import com.noronsoft.noroncontrolapp.requestParams.GetIoParams;
-import com.noronsoft.noroncontrolapp.requestParams.SetIoParams;
+import com.pusher.rest.Pusher;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class IOService {
 
-    private final IORepository ioRepository;
-    private final DeviceRepository deviceRepository;
     private final DeviceService deviceService;
+    private final Pusher pusher;
 
-    @Autowired
-    public IOService(IORepository ioRepository, DeviceRepository deviceRepository, DeviceService deviceService) {
-        this.ioRepository = ioRepository;
-        this.deviceRepository = deviceRepository;
+    public IOService(DeviceService deviceService, Pusher pusher) {
         this.deviceService = deviceService;
+        this.pusher = pusher;
     }
 
-    public SetIOResponse setIo(SetIoParams setIoParams, HttpServletRequest request) {
-        SetIOResponse response = new SetIOResponse();
-        Integer userId = (Integer) request.getAttribute("userId");
-
-        Optional<DeviceModel> device = deviceRepository.findById(setIoParams.getDevId());
-        if (device.isEmpty() || deviceService.hasAccessToDevice(device.get(), userId)) {
-            response.setDevice("ERROR");
-            response.setConfirmed("ERROR");
-            return response;
-        } else {
-            response.setDevice("OK");
+    public ResponseEntity<Map<String, String>> processSendCommand(SetRelay request, HttpServletRequest httpServletRequest) {
+        Integer userId = (Integer) httpServletRequest.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token geçersiz veya kullanıcı doğrulanamadı."));
         }
 
-        // Komut Ekleme
-        try {
-            IoCommandModel newCommand = new IoCommandModel();
-            newCommand.setClientId(userId);
-            newCommand.setDevId(setIoParams.getDevId());
-            newCommand.setCmdText(setIoParams.getMessage());
-            newCommand.setCreatedDateTime(LocalDateTime.now());
-            ioRepository.save(newCommand);
-            response.setConfirmed("OK");
-        } catch (Exception e) {
-            response.setConfirmed("ERROR");
+        String setRelay = request.getSetrelay();
+        String time = request.getTime();
+        String type = request.getType();
+        Integer deviceId = request.getDeviceId();
+
+        if (setRelay == null || time == null || type == null || deviceId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Eksik parametreler gönderildi."));
         }
 
-        return response;
-    }
-
-    public GetIoResponse getIo(GetIoParams getIoParams, HttpServletRequest request) {
-        GetIoResponse response = new GetIoResponse();
-        Integer userId = (Integer) request.getAttribute("userId");
-
-        // Cihaz Doğrulama ve Yetki Kontrolü
-        Optional<DeviceModel> device = deviceRepository.findById(getIoParams.getDevId());
-        if (device.isEmpty() || deviceService.hasAccessToDevice(device.get(), userId)) {
-            response.setDevice("ERROR");
-            return response;
-        } else {
-            response.setDevice("OK");
+        Optional<DeviceModel> deviceOptional = deviceService.checkDevice(deviceId);
+        if (deviceOptional.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Cihaz bulunamadı."));
         }
 
-        // Cihazdan Mesajları Çekme
-        Optional<IoCommandModel> ioCommand = ioRepository.findLastestByDevId(getIoParams.getDevId());
-        if (ioCommand.isPresent()) {
-            response.setMessage(ioCommand.get().getCmdText());
-            response.setId(ioCommand.get().getId().toString());
-        } else {
-            response.setMessage("No Data");
-            response.setId("0");
+        DeviceModel device = deviceOptional.get();
+
+        if (!deviceService.hasAccessToDevice(device, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "Cihaza erişim izniniz yok."));
         }
 
-        return response;
+        String channel = "private-device-" + deviceId;
+        Map<String, Object> data = Map.of("setrelay", setRelay, "time", time, "type", type);
+        String event = "relay-command";
+
+        pusher.trigger(channel, event, data);
+
+        return ResponseEntity.ok(Map.of("setrelay", setRelay));
     }
 }
