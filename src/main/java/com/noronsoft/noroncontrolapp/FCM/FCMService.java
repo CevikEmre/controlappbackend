@@ -4,6 +4,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import jakarta.annotation.PostConstruct;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Set;
 
@@ -25,16 +27,22 @@ public class FCMService {
 
     @PostConstruct
     public void initializeFirebase() {
+        FileInputStream serviceAccount = null;
         try {
-            FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
-            FirebaseOptions options = new FirebaseOptions.Builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
-            FirebaseApp.initializeApp(options);
-            System.out.println("FirebaseApp başarıyla başlatıldı.");
-        } catch (IOException e) {
-            System.err.println("FirebaseApp başlatılırken hata oluştu: " + e.getMessage());
+            serviceAccount = new FileInputStream(serviceAccountPath);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
         }
+        FirebaseOptions options = null;
+        try {
+            options = new FirebaseOptions.Builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        FirebaseApp.initializeApp(options);
+            System.out.println("FirebaseApp başarıyla başlatıldı.");
     }
 
     public void sendPushNotification(Set<String> deviceTokens, String title, String body) {
@@ -52,22 +60,22 @@ public class FCMService {
     }
 
     private void sendSinglePushNotification(String deviceToken, String title, String body) {
-        try {
-            System.out.println("Bildirim oluşturuluyor. Token: " + deviceToken);
-            Message message = Message.builder()
-                    .setToken(deviceToken)
-                    .setNotification(Notification.builder()
-                            .setTitle(title)
-                            .setBody(body)
-                            .build())
-                    .build();
+        System.out.println("Bildirim oluşturuluyor. Token: " + deviceToken);
+        Message message = Message.builder()
+                .setToken(deviceToken)
+                .setNotification(Notification.builder()
+                        .setTitle(title)
+                        .setBody(body)
+                        .build())
+                .build();
 
-            System.out.println("FirebaseMessaging üzerinden gönderim başlatılıyor.");
-            String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("FCM bildirimi başarıyla gönderildi. Yanıt: " + response);
-        } catch (Exception e) {
-            System.err.println("FCM bildirimi gönderilirken bir hata oluştu. Token: " + deviceToken);
-            System.err.println("Hata Mesajı: " + e.getMessage());
+        System.out.println("FirebaseMessaging üzerinden gönderim başlatılıyor.");
+        String response = null;
+        try {
+            response = FirebaseMessaging.getInstance().send(message);
+        } catch (FirebaseMessagingException e) {
+            throw new RuntimeException(e);
         }
+        System.out.println("FCM bildirimi başarıyla gönderildi. Yanıt: " + response);
     }
 }
