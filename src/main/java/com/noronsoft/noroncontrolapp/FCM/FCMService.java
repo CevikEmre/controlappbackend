@@ -31,6 +31,7 @@ public class FCMService {
         try {
             serviceAccount = new FileInputStream(serviceAccountPath);
         } catch (FileNotFoundException e) {
+            System.out.println("a");
             throw new RuntimeException(e);
         }
         FirebaseOptions options = null;
@@ -39,6 +40,7 @@ public class FCMService {
                         .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                         .build();
         } catch (IOException e) {
+            System.out.println("b");
             throw new RuntimeException(e);
         }
         FirebaseApp.initializeApp(options);

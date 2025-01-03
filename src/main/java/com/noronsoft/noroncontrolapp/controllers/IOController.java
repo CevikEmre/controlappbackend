@@ -1,11 +1,10 @@
 package com.noronsoft.noroncontrolapp.controllers;
-
-import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
-import com.noronsoft.noroncontrolapp.services.IOService;
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
+/*
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -13,22 +12,19 @@ import java.util.Map;
 @RequestMapping("/api/io")
 public class IOController {
 
-    private final IOService ioService;
+    private final CustomSocketServer customSocketServer;
 
-    public IOController(IOService ioService) {
-        this.ioService = ioService;
+    public IOController(CustomSocketServer customSocketServer) {
+      this.customSocketServer = customSocketServer;
     }
 
     @PostMapping("/send-command")
-    public ResponseEntity<Map<String, String>> sendCommandToDevice(
-            @RequestBody SetRelay request,
-            HttpServletRequest httpServletRequest) {
-
+    public ResponseEntity<Map<String, String>> sendCommandToDevice(@RequestParam int deviceId, @RequestParam String message) {
         try {
-            return ioService.processSendCommand(request, httpServletRequest);
+            customSocketServer.sendMessageToDevice(deviceId, message);
+            return ResponseEntity.ok(Map.of("status", "success", "deviceId", String.valueOf(deviceId), "message", message));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Komut gönderilirken bir hata oluştu.", "details", e.getMessage()));
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", e.getMessage()));
         }
     }
-}
+}*/
