@@ -1,10 +1,9 @@
 package com.noronsoft.noroncontrolapp.controllers;
-/*
+
+import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
+import com.noronsoft.noroncontrolapp.services.IOService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -12,19 +11,30 @@ import java.util.Map;
 @RequestMapping("/api/io")
 public class IOController {
 
-    private final CustomSocketServer customSocketServer;
+    private final IOService ioService;
 
-    public IOController(CustomSocketServer customSocketServer) {
-      this.customSocketServer = customSocketServer;
+    public IOController(IOService ioService) {
+        this.ioService = ioService;
     }
 
     @PostMapping("/send-command")
-    public ResponseEntity<Map<String, String>> sendCommandToDevice(@RequestParam int deviceId, @RequestParam String message) {
+    public ResponseEntity<Map<String, String>> sendCommandToDevice(@RequestBody SetRelay setRelay) {
         try {
-            customSocketServer.sendMessageToDevice(deviceId, message);
-            return ResponseEntity.ok(Map.of("status", "success", "deviceId", String.valueOf(deviceId), "message", message));
+            // IOService ile mesajı gönder
+            String response = ioService.sendMessageToDevice(setRelay);
+
+            // Başarılı yanıt döndür
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "deviceId", String.valueOf(setRelay.getDeviceId()),
+                    "response", response
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", e.getMessage()));
+            // Hata durumunda 500 döndür
+            return ResponseEntity.status(500).body(Map.of(
+                    "status", "error",
+                    "message", e.getMessage()
+            ));
         }
     }
-}*/
+}

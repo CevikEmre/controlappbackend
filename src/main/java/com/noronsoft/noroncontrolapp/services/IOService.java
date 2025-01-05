@@ -1,17 +1,26 @@
 package com.noronsoft.noroncontrolapp.services;
 
-import com.pusher.rest.Pusher;
+import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
 public class IOService {
 
-    private final DeviceService deviceService;
-    private final Pusher pusher;
+    private final WebClient webClient;
 
-    public IOService(DeviceService deviceService, Pusher pusher) {
-        this.deviceService = deviceService;
-        this.pusher = pusher;
+    public IOService() {
+        this.webClient = WebClient.builder()
+                .baseUrl("http://185.186.25.186/server")
+                .build();
     }
 
+    public String sendMessageToDevice(SetRelay setRelay) {
+        return this.webClient.post()
+                .uri("/setRelay.php")
+                .bodyValue(setRelay)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
 }
