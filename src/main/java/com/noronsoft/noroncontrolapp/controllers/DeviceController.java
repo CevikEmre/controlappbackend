@@ -144,11 +144,11 @@ public class DeviceController {
     }
 
     @PostMapping("/addDevice")
-    public ResponseEntity<DeviceDto> addDevice(@RequestBody DeviceAddParams deviceAddParams) {
+    public ResponseEntity<String> addDevice(@RequestBody DeviceAddParams deviceAddParams) {
         try {
-            DeviceDto deviceDto = deviceService.addDevice(deviceAddParams);
-            System.out.println("Device added with ID: " + deviceDto.getDevId());
-            return ResponseEntity.ok(deviceDto);
+            String response = deviceService.addDevice(deviceAddParams);
+            System.out.println("Device added");
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             System.out.println("Failed to add device. Reason: " + e.getMessage());
             return ResponseEntity.badRequest().build();

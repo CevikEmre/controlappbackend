@@ -24,4 +24,5 @@ public class DeviceDto {
     private String m2mSerial;
     private Boolean connected;
     private DeviceType deviceType;
+    private Boolean isAdmin;
 }

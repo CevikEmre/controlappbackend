@@ -88,9 +88,10 @@ public class DeviceService {
                 .filter(device -> device.getClientId().equals(userId) ||
                         device.getOtherClients().stream()
                                 .anyMatch(client -> client.getID().equals(userId)))
-                .map(this::convertToDeviceDto)
+                .map(device -> convertToDeviceDto(device, userId))
                 .collect(Collectors.toList());
     }
+
 
     public Optional<DeviceDto> getDeviceDetail(Integer deviceId, Integer userId) {
         Optional<DeviceModel> deviceOptional = checkDevice(deviceId);
@@ -99,10 +100,11 @@ public class DeviceService {
             return Optional.empty();
         }
 
-        return deviceOptional.map(this::convertToDeviceDto);
+        return deviceOptional.map(device -> convertToDeviceDto(device, userId));
     }
 
-    public DeviceDto addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
+
+    public String addDevice(DeviceAddParams deviceAddParams) throws IllegalArgumentException {
         Optional<DeviceModel> existingDevice = deviceRepository.findByDevId(deviceAddParams.getDevId());
         if (existingDevice.isPresent()) {
             throw new IllegalArgumentException("Device with devId " + deviceAddParams.getDevId() + " already exists.");
@@ -117,11 +119,13 @@ public class DeviceService {
         device.setDeviceType(deviceAddParams.getDeviceType());
         device.setCreatedDateTime(deviceAddParams.getCreatedDateTime());
 
-        DeviceModel savedDevice = deviceRepository.save(device);
-        return convertToDeviceDto(savedDevice);
+        deviceRepository.save(device);
+
+        return "Device with devId " + deviceAddParams.getDevId() + " successfully added.";
     }
 
-    private DeviceDto convertToDeviceDto(DeviceModel device) {
+
+    private DeviceDto convertToDeviceDto(DeviceModel device,Integer userId) {
         DeviceDto deviceDto = new DeviceDto();
         deviceDto.setId(device.getId());
         deviceDto.setDevId(device.getDevId());
@@ -136,8 +140,10 @@ public class DeviceService {
         deviceDto.setConnected(device.getConnected());
         deviceDto.setDeviceType(device.getDeviceType());
         deviceDto.setOtherClients(convertToClientDtos(device.getOtherClients()));
+        deviceDto.setIsAdmin(isAdminOfDevice(device, userId));
         return deviceDto;
     }
+
 
     private Set<ClientDto> convertToClientDtos(Set<ClientModel> clients) {
         return clients.stream().map(client -> {
