@@ -145,7 +145,7 @@ public class DeviceService {
     }
 
 
-    private Set<ClientDto> convertToClientDtos(Set<ClientModel> clients) {
+    public Set<ClientDto> convertToClientDtos(Set<ClientModel> clients) {
         return clients.stream().map(client -> {
             ClientDto clientDto = new ClientDto();
             clientDto.setId(client.getID());

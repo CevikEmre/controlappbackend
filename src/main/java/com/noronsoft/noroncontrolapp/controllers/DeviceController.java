@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.controllers;
 
+import com.noronsoft.noroncontrolapp.DTOs.ClientDto;
 import com.noronsoft.noroncontrolapp.DTOs.DeviceDto;
 import com.noronsoft.noroncontrolapp.models.ClientModel;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/device")
@@ -122,6 +124,27 @@ public class DeviceController {
         List<DeviceDto> devices = deviceService.getAllDevicesForClient(userId);
         System.out.println("Fetched devices for client with ID: " + userId);
         return ResponseEntity.ok(devices);
+    }
+    @GetMapping("/getUsersForDevice")
+    public ResponseEntity<?> getUsersForDevice(@RequestParam Integer deviceId,HttpServletRequest httpServletRequest) {
+        Optional<DeviceModel> deviceOptional = deviceService.checkDevice(deviceId);
+        Integer userId = (Integer) httpServletRequest.getAttribute("userId");
+
+        if (deviceOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Device with ID " + deviceId + " not found.");
+        }
+
+        DeviceModel device = deviceOptional.get();
+
+        if (!deviceService.hasAccessToDevice(device, userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("You do not have access to this device.");
+        }
+
+        Set<ClientDto> otherClients = deviceService.convertToClientDtos(device.getOtherClients());
+
+        return ResponseEntity.ok(otherClients);
     }
 
     @GetMapping("/getDeviceDetail")
