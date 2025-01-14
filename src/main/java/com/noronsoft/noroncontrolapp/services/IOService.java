@@ -1,5 +1,6 @@
 package com.noronsoft.noroncontrolapp.services;
 
+import com.noronsoft.noroncontrolapp.DTOs.GetDeviceInfo;
 import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,6 +20,14 @@ public class IOService {
         return this.webClient.post()
                 .uri("/setRelay.php")
                 .bodyValue(setRelay)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+    public String getDeviceInfo(GetDeviceInfo getDeviceInfo) {
+        return this.webClient.post()
+                .uri("/setRelay.php")
+                .bodyValue(getDeviceInfo)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
