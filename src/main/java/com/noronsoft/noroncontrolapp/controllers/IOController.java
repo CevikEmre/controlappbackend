@@ -4,8 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.noronsoft.noroncontrolapp.DTOs.ConnectionError;
-import com.noronsoft.noroncontrolapp.DTOs.DeviceInfoResponse;
 import com.noronsoft.noroncontrolapp.DTOs.GetDeviceInfo;
 import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
 import com.noronsoft.noroncontrolapp.services.IOService;
@@ -58,32 +56,13 @@ public class IOController {
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            Map<String, Object> responseMap = objectMapper.readValue(rawResponse, new TypeReference<>() {});
+            Map<String, Object> jsonResponse = objectMapper.readValue(rawResponse, new TypeReference<>() {});
 
-            if ("error".equals(responseMap.get("status"))) {
-                ConnectionError connectionError = objectMapper.convertValue(responseMap, ConnectionError.class);
-                System.out.println("Connection Error: " + connectionError);
-
-                if ("Device not connected".equals(connectionError.getMessage())) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(connectionError);
-                }
-
-                return ResponseEntity.badRequest().body(connectionError);
-            }
-
-            if (responseMap.containsKey("getiostat")) {
-                DeviceInfoResponse deviceInfoResponse = objectMapper.readValue(rawResponse, DeviceInfoResponse.class);
-                return ResponseEntity.ok(deviceInfoResponse);
-            }
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "status", "error",
-                    "message", "Unknown response format",
-                    "rawResponse", rawResponse
-            ));
+            return ResponseEntity.ok(jsonResponse);
 
         } catch (JsonProcessingException e) {
             System.out.println("JSON processing failed: " + e.getMessage());
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "status", "error",
                     "message", "Invalid JSON format",
@@ -91,6 +70,7 @@ public class IOController {
             ));
         } catch (Exception e) {
             System.out.println("General error: " + e.getMessage());
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "status", "error",
                     "message", e.getMessage()
