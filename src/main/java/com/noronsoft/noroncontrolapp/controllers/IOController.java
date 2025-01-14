@@ -1,10 +1,20 @@
 package com.noronsoft.noroncontrolapp.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.noronsoft.noroncontrolapp.DTOs.ConnectionError;
+import com.noronsoft.noroncontrolapp.DTOs.DeviceInfoResponse;
 import com.noronsoft.noroncontrolapp.DTOs.GetDeviceInfo;
 import com.noronsoft.noroncontrolapp.DTOs.SetRelay;
 import com.noronsoft.noroncontrolapp.services.IOService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -40,20 +50,48 @@ public class IOController {
     }
 
     @PostMapping("/getDeviceInfo")
-    public ResponseEntity<Map<String, String>> getDeviceInfo(@RequestBody GetDeviceInfo getDeviceInfo) {
+    public ResponseEntity<?> getDeviceInfo(@RequestBody GetDeviceInfo getDeviceInfo) {
         try {
-            // IOService ile mesajı gönder
-            String response = ioService.getDeviceInfo(getDeviceInfo);
+            String rawResponse = ioService.getDeviceInfo(getDeviceInfo);
+            System.out.println("Raw Response: [" + rawResponse + "]");
 
-            // Başarılı yanıt döndür
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "deviceId", String.valueOf(getDeviceInfo.getDeviceId()),
-                    "response", response
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            Map<String, Object> responseMap = objectMapper.readValue(rawResponse, new TypeReference<>() {});
+
+            if ("error".equals(responseMap.get("status"))) {
+                ConnectionError connectionError = objectMapper.convertValue(responseMap, ConnectionError.class);
+                System.out.println("Connection Error: " + connectionError);
+
+                if ("Device not connected".equals(connectionError.getMessage())) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(connectionError);
+                }
+
+                return ResponseEntity.badRequest().body(connectionError);
+            }
+
+            if (responseMap.containsKey("getiostat")) {
+                DeviceInfoResponse deviceInfoResponse = objectMapper.readValue(rawResponse, DeviceInfoResponse.class);
+                return ResponseEntity.ok(deviceInfoResponse);
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "error",
+                    "message", "Unknown response format",
+                    "rawResponse", rawResponse
+            ));
+
+        } catch (JsonProcessingException e) {
+            System.out.println("JSON processing failed: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", "error",
+                    "message", "Invalid JSON format",
+                    "details", e.getMessage()
             ));
         } catch (Exception e) {
-            // Hata durumunda 500 döndür
-            return ResponseEntity.status(500).body(Map.of(
+            System.out.println("General error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "status", "error",
                     "message", e.getMessage()
             ));
