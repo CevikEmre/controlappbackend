@@ -159,4 +159,21 @@ public class DeviceService {
             return clientDto;
         }).collect(Collectors.toSet());
     }
+    public List<String> getDeviceRelays(Integer deviceId) {
+        DeviceModel device = deviceRepository.findByDevId(deviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Device not found with ID: " + deviceId));
+        return device.getRelayNames();
+    }
+
+    @Transactional
+    public void updateDeviceRelays(Integer deviceId, List<String> relayNames) {
+        DeviceModel device = deviceRepository.findByDevId(deviceId)
+                .orElseThrow(() -> new IllegalArgumentException("Device not found with ID: " + deviceId));
+
+        // Röle isimlerini güncelle
+        device.setRelayNames(relayNames);
+
+        // Veritabanına kaydet
+        deviceRepository.save(device);
+    }
 }

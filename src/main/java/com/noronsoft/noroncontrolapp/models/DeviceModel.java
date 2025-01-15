@@ -8,7 +8,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -60,4 +62,17 @@ public class DeviceModel {
     @Column(name = "token")
     private Set<String> deviceTokens = new HashSet<>();
 
+    @ElementCollection
+    @CollectionTable(name = "device_relays", joinColumns = @JoinColumn(name = "device_id"))
+    @Column(name = "relay_name")
+    private List<String> relayNames = new ArrayList<>();
+
+    @PrePersist
+    private void setDefaultRelayNames() {
+        if (relayNames == null || relayNames.isEmpty()) {
+            relayNames.add("Pompa 1");
+            relayNames.add("Pompa 2");
+            relayNames.add("Pompa 3");
+        }
+    }
 }

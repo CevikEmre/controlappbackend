@@ -177,4 +177,17 @@ public class DeviceController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @GetMapping("/{deviceId}/relays")
+    public ResponseEntity<List<String>> getDeviceRelays(@PathVariable Integer deviceId) {
+        List<String> relays = deviceService.getDeviceRelays(deviceId);
+        return ResponseEntity.ok(relays);
+    }
+
+    @PutMapping("/{deviceId}/relays")
+    public ResponseEntity<String> updateDeviceRelays(@PathVariable Integer deviceId, @RequestBody List<String> relayNames) {
+        deviceService.updateDeviceRelays(deviceId, relayNames);
+
+        return ResponseEntity.ok("Relay names updated successfully.");
+    }
 }
