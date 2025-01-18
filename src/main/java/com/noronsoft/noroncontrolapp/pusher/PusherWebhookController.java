@@ -1,6 +1,5 @@
 package com.noronsoft.noroncontrolapp.pusher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.noronsoft.noroncontrolapp.FCM.FCMService;
 import com.noronsoft.noroncontrolapp.models.DeviceModel;
 import com.noronsoft.noroncontrolapp.repositories.DeviceRepository;
@@ -8,7 +7,6 @@ import com.pusher.rest.Pusher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,67 +23,66 @@ public class PusherWebhookController {
         this.fcmService = fcmService;
         this.deviceRepository = deviceRepository;
         this.pusher = pusher;
+        System.out.println("PusherWebhookController başlatıldı.");
     }
 
     @PostMapping("/webhook")
-    public ResponseEntity<String> handlePusherWebhook(@RequestBody Map<String, Object> payload) {
-        System.out.println("Webhook received payload: " + payload);
-        if (payload.containsKey("events")) {
-            List<Map<String, Object>> events = (List<Map<String, Object>>) payload.get("events");
-            for (Map<String, Object> event : events) {
-                String eventName = (String) event.get("name");
-                System.out.println("Processing event: " + eventName);
+    public ResponseEntity<String> handleWebhook(@RequestBody Map<String, Object> payload) {
+        System.out.println("Webhook payload alındı: " + payload);
 
-                if ("client_event".equals(eventName)) {
-                    try {
-                        Map<String, Object> eventData = new ObjectMapper().readValue((String) event.get("data"), Map.class);
-                        String error = (String) eventData.get("error");
-                        String deviceId = (String) eventData.get("deviceId");
-                        System.out.println("Received client-error with deviceId: " + deviceId + ", error: " + error);
+        if (payload.containsKey("deviceId") && payload.containsKey("text")) {
+            try {
+                Integer deviceId = (Integer) payload.get("deviceId");
+                String text = (String) payload.get("text");
 
-                        sendErrorNotification(deviceId, error);
-                    } catch (Exception e) {
-                        System.err.println("Error parsing event data: " + e.getMessage());
-                    }
-                } else {
-                    System.out.println("Unhandled event name: " + eventName);
-                }
+                System.out.println("Webhook tetiklendi [DeviceId: " + deviceId + ", Text: " + text + "]");
+
+                // Gelen veriye göre işlem yapabilirsiniz
+                sendErrorNotification(deviceId, text);
+            } catch (Exception e) {
+                System.err.println("Webhook işlenirken hata: " + e.getMessage());
+                e.printStackTrace();
             }
         } else {
-            System.out.println("No events found in the payload.");
+            System.out.println("Payload formatı geçersiz: " + payload);
         }
 
-        return ResponseEntity.ok("Webhook processed");
+        return ResponseEntity.ok("Webhook işlendi");
     }
 
-    private void sendErrorNotification(String deviceId, String error) {
-        System.out.println("Looking up device with ID: " + deviceId);
-        Optional<DeviceModel> deviceOptional = deviceRepository.findByDevId(Integer.valueOf(deviceId));
+    private void sendErrorNotification(Integer deviceId, String text) {
+        System.out.println("Hata bildirimi başlatıldı. Device ID: " + deviceId + ", Mesaj: " + text);
+
+        Optional<DeviceModel> deviceOptional = deviceRepository.findByDevId(deviceId);
 
         if (deviceOptional.isPresent()) {
             DeviceModel device = deviceOptional.get();
-            System.out.println("Device found: " + device);
+            System.out.println("Cihaz bulundu: " + device);
+
             Set<String> deviceTokens = device.getDeviceTokens();
 
             if (!deviceTokens.isEmpty()) {
-                System.out.println("Device tokens: " + deviceTokens);
-                String title = "Hata: Cihaz " + deviceId;
-                String body = "Cihazınızdan hata alındı: " + error;
+                String title = "Uyarı: Cihaz " + deviceId;
+                String body = "Cihazdan mesaj: " + text;
 
                 try {
+                    System.out.println("Push bildirimi gönderiliyor... Tokens: " + deviceTokens);
                     fcmService.sendPushNotification(deviceTokens, title, body);
-                    System.out.println("Push notification sent successfully.");
+                    System.out.println("Push bildirimi başarıyla gönderildi.");
                 } catch (Exception e) {
-                    System.err.println("Error sending push notification: " + e.getMessage());
+                    System.err.println("Push bildirimi gönderilirken hata: " + e.getMessage());
+                    e.printStackTrace();
                 }
             } else {
-                System.out.println("No device tokens found for deviceId: " + deviceId);
+                System.out.println("Cihaz için kayıtlı token yok: " + deviceId);
             }
         } else {
-            System.out.println("No device found with ID: " + deviceId);
+            System.out.println("Cihaz bulunamadı: " + deviceId);
         }
     }
 
+    // Gereksiz olan auth endpointi yoruma alınmıştır.
+    /*
     @PostMapping("/auth")
     public ResponseEntity<String> authenticate(
             @RequestParam("socket_id") String socketId,
@@ -96,4 +93,5 @@ public class PusherWebhookController {
         System.out.println("Authentication successful: " + auth);
         return ResponseEntity.ok(auth);
     }
+    */
 }

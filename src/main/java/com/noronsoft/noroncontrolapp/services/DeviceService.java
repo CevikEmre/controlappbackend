@@ -85,9 +85,13 @@ public class DeviceService {
         List<DeviceModel> allDevices = deviceRepository.findAll();
 
         return allDevices.stream()
-                .filter(device -> device.getClientId().equals(userId) ||
-                        device.getOtherClients().stream()
-                                .anyMatch(client -> client.getID().equals(userId)))
+                .filter(device ->
+                        Optional.ofNullable(device.getClientId()).map(id -> id.equals(userId)).orElse(false) ||
+                                Optional.ofNullable(device.getOtherClients())
+                                        .map(clients -> clients.stream()
+                                                .anyMatch(client -> client.getID().equals(userId)))
+                                        .orElse(false)
+                )
                 .map(device -> convertToDeviceDto(device, userId))
                 .collect(Collectors.toList());
     }
